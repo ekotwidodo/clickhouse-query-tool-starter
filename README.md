@@ -8,7 +8,7 @@ Modern web-based SQL query tool for ClickHouse with responsive UI and data expor
 - **SQL Editor**: CodeMirror-powered with syntax highlighting
 - **Saved Queries**: Save, load, and manage your favorite queries
 - **Execution Timer**: Real-time query execution time tracking
-- **Data Export**: Download results as CSV or Excel
+- **Data Export**: Download results as CSV, Excel, or Parquet
 - **Responsive**: Works on desktop, tablet, and mobile
 - **TOML Config**: Dynamic database configuration
 - **Real-time**: Instant query execution with loading indicators
@@ -58,7 +58,7 @@ Access at: **http://localhost:8000**
 - **Execution Timer**: Real-time timer showing query duration
 - **Loading Indicator**: Shows during query execution with live timer
 - **Results Table**: Scrollable, sticky header, hover effects
-- **Export Options**: Download as CSV or Excel
+- **Export Options**: Download as CSV, Excel, or Parquet
 - **Save Queries**: Bookmark queries for later use
 
 #### Saved Queries Tab
@@ -134,6 +134,15 @@ Or with pip:
 pip install -r requirements.txt
 ```
 
+### Dependencies
+
+- **clickhouse-connect**: ClickHouse database driver
+- **pandas**: Data manipulation and analysis
+- **fastapi**: Web framework
+- **uvicorn**: ASGI server
+- **tomlkit**: TOML file manipulation
+- **pyarrow**: Parquet file support
+
 ## 🔒 Security
 
 - `config.toml` is gitignored (contains credentials)
@@ -147,7 +156,7 @@ pip install -r requirements.txt
 2. Click **Run Query** button or press `Ctrl+Enter`
 3. Watch the real-time timer during execution
 4. View results in the table below
-5. Download as CSV or Excel if needed
+5. Download as CSV, Excel, or Parquet if needed
 
 ### Saving Queries
 1. Write a query you want to save

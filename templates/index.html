@@ -117,12 +117,6 @@
             background-color: #fff3e0;
         }
         
-        .badge-count {
-            background: linear-gradient(135deg, #ff8c00 0%, #ff6b35 100%);
-            font-size: 0.9rem;
-            padding: 8px 16px;
-        }
-        
         /* Tab Navigation */
         .nav-tabs {
             border-bottom: 2px solid #dee2e6;
@@ -193,6 +187,40 @@
             font-size: 4rem;
             color: #dee2e6;
             margin-bottom: 20px;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-top: 30px;
+        }
+        
+        .footer a {
+            color: #ff8c00;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .footer .heart {
+            color: #ff6b35;
+            display: inline-block;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
         }
         
         /* Query Execution Time */
@@ -266,14 +294,16 @@
                 
                 <div id="results-section" class="results-section">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                        <h2 class="h4 mb-0">📊 Results</h2>
+                        <h2 class="h4 mb-0">📊 Results <span id="row-count" style="font-size: 0.9em; color: #6b7280;"></span></h2>
                         <div class="d-flex gap-2 align-items-center flex-wrap">
-                            <span id="row-count" class="badge badge-count"></span>
                             <button class="btn btn-outline-success btn-sm" onclick="downloadCSV()" id="download-csv-btn" style="display: none;">
-                                <i class="bi bi-filetype-csv"></i> Download CSV
+                                <i class="bi bi-filetype-csv"></i> CSV
                             </button>
                             <button class="btn btn-outline-primary btn-sm" onclick="downloadExcel()" id="download-excel-btn" style="display: none;">
-                                <i class="bi bi-file-earmark-excel"></i> Download Excel
+                                <i class="bi bi-file-earmark-excel"></i> Excel
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="downloadParquet()" id="download-parquet-btn" style="display: none;">
+                                <i class="bi bi-file-earmark-arrow-down"></i> Parquet
                             </button>
                         </div>
                     </div>
@@ -302,6 +332,11 @@
                 </div>
             </div>
         </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        Developed with <i class="bi bi-heart-fill heart"></i> and a cup of coffee ☕ by <a href="https://github.com/ekotwidodo" target="_blank" rel="noopener noreferrer">ekotwidodo</a>
     </div>
     
     <!-- Loading Overlay -->
@@ -497,7 +532,7 @@
             const { columns, data, row_count } = result;
             currentResults = result;
             
-            document.getElementById('row-count').textContent = `${row_count} rows`;
+            document.getElementById('row-count').textContent = `(${row_count} rows)`;
             
             const thead = document.getElementById('table-head');
             thead.innerHTML = '<tr>' + columns.map(col => `<th>${escapeHtml(col)}</th>`).join('') + '</tr>';
@@ -510,6 +545,7 @@
             document.getElementById('results-section').classList.add('active');
             document.getElementById('download-csv-btn').style.display = 'inline-block';
             document.getElementById('download-excel-btn').style.display = 'inline-block';
+            document.getElementById('download-parquet-btn').style.display = 'inline-block';
         }
         
         function clearEditor() {
@@ -519,6 +555,7 @@
             document.getElementById('results-section').classList.remove('active');
             document.getElementById('download-csv-btn').style.display = 'none';
             document.getElementById('download-excel-btn').style.display = 'none';
+            document.getElementById('download-parquet-btn').style.display = 'none';
             document.getElementById('execution-time').classList.remove('active');
             currentResults = null;
         }
@@ -629,6 +666,46 @@
         
         function escapeXml(text) {
             return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+        }
+        
+        async function downloadParquet() {
+            const sqlQuery = editor.getValue().trim();
+            
+            if (!sqlQuery) {
+                showAlert('No query to download', 'danger');
+                return;
+            }
+            
+            try {
+                showLoading(true);
+                
+                const response = await fetch('/api/download/parquet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sql_query: sqlQuery })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to generate Parquet file');
+                }
+                
+                // Download the file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `query_result_${new Date().getTime()}.parquet`;
+                link.click();
+                window.URL.revokeObjectURL(url);
+                
+                showAlert('✓ Parquet file downloaded successfully', 'success');
+                
+            } catch (error) {
+                showAlert(`✗ Error: ${error.message}`, 'danger');
+            } finally {
+                showLoading(false);
+            }
         }
         
         // Saved Queries Functions

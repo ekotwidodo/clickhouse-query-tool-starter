@@ -5,13 +5,14 @@ Usage: uvicorn app:app --reload --host 0.0.0.0 --port 8000
 """
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import pandas as pd
 from pathlib import Path
 import tomlkit
 import re
+import io
 from datetime import datetime
 
 from modules.query import execute_query
@@ -241,3 +242,34 @@ async def update_query_usage(query_key: str):
         tomlkit.dump(config, f)
     
     return {"success": True, "last_used": now}
+
+
+@app.post("/api/download/parquet")
+async def download_parquet(request: QueryRequest):
+    """Execute query and return results as Parquet file"""
+    try:
+        # Execute query
+        df = execute_query(request.sql_query)
+        
+        # Format dataframe
+        df = format_dataframe(df)
+        
+        # Replace NaN with None
+        df = df.where(pd.notnull(df), None)
+        
+        # Convert to Parquet
+        parquet_buffer = io.BytesIO()
+        df.to_parquet(parquet_buffer, engine='pyarrow', index=False)
+        parquet_buffer.seek(0)
+        
+        # Return as file download
+        return StreamingResponse(
+            parquet_buffer,
+            media_type="application/octet-stream",
+            headers={
+                "Content-Disposition": "attachment; filename=query_result.parquet"
+            }
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
