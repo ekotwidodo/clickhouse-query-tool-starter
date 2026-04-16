@@ -10,6 +10,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import pandas as pd
 from pathlib import Path
+import tomlkit
+import re
+from datetime import datetime
 
 from modules.query import execute_query
 from modules.formatter import format_dataframe
@@ -23,6 +26,11 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 class QueryRequest(BaseModel):
     sql_query: str
+
+
+class SaveQueryRequest(BaseModel):
+    name: str
+    sql: str
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -72,3 +80,164 @@ async def run_query(request: QueryRequest):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+
+
+# Helper functions for saved queries
+def get_config_path():
+    """Get path to config.toml"""
+    return Path(__file__).parent / "config.toml"
+
+
+def slugify(name):
+    """Convert name to URL-safe key"""
+    # Convert to lowercase, replace non-alphanumeric with underscores
+    key = name.lower().strip()
+    key = re.sub(r'[^a-z0-9]+', '_', key)
+    key = key.strip('_')
+    return key
+
+
+def get_unique_key(base_key):
+    """Generate unique key by appending number if key exists"""
+    config_path = get_config_path()
+    if not config_path.exists():
+        return base_key
+    
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = tomlkit.load(f)
+    
+    queries = config.get('queries', {})
+    if base_key not in queries:
+        return base_key
+    
+    # Try appending numbers
+    counter = 2
+    while f"{base_key}_{counter}" in queries:
+        counter += 1
+    return f"{base_key}_{counter}"
+
+
+@app.get("/api/queries")
+async def get_saved_queries():
+    """Get all saved queries"""
+    config_path = get_config_path()
+    
+    if not config_path.exists():
+        return {"queries": []}
+    
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = tomlkit.load(f)
+    
+    queries_section = config.get('queries', {})
+    queries_list = []
+    
+    for key, query_data in queries_section.items():
+        queries_list.append({
+            "key": key,
+            "name": query_data.get('name', ''),
+            "sql": query_data.get('sql', ''),
+            "created_at": query_data.get('created_at', ''),
+            "last_used": query_data.get('last_used', '')
+        })
+    
+    return {"queries": queries_list}
+
+
+@app.post("/api/queries")
+async def save_query(request: SaveQueryRequest):
+    """Save a new query"""
+    if not request.sql.strip():
+        raise HTTPException(status_code=400, detail="SQL query cannot be empty")
+    
+    if not request.name.strip():
+        raise HTTPException(status_code=400, detail="Query name cannot be empty")
+    
+    config_path = get_config_path()
+    
+    # Load or create config
+    if config_path.exists():
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = tomlkit.load(f)
+    else:
+        config = tomlkit.document()
+    
+    # Generate unique key
+    base_key = slugify(request.name)
+    unique_key = get_unique_key(base_key)
+    
+    # Create query entry
+    now = datetime.now().isoformat()
+    query_entry = tomlkit.table()
+    query_entry['name'] = request.name.strip()
+    query_entry['sql'] = request.sql.strip()
+    query_entry['created_at'] = now
+    query_entry['last_used'] = now
+    
+    # Add to queries section
+    if 'queries' not in config:
+        config['queries'] = tomlkit.table()
+    
+    config['queries'][unique_key] = query_entry
+    
+    # Save config
+    with open(config_path, 'w', encoding='utf-8') as f:
+        tomlkit.dump(config, f)
+    
+    return {
+        "success": True,
+        "key": unique_key,
+        "name": request.name.strip(),
+        "sql": request.sql.strip(),
+        "created_at": now,
+        "last_used": now
+    }
+
+
+@app.delete("/api/queries/{query_key}")
+async def delete_query(query_key: str):
+    """Delete a saved query"""
+    config_path = get_config_path()
+    
+    if not config_path.exists():
+        raise HTTPException(status_code=404, detail="Config file not found")
+    
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = tomlkit.load(f)
+    
+    queries = config.get('queries', {})
+    if query_key not in queries:
+        raise HTTPException(status_code=404, detail="Query not found")
+    
+    del config['queries'][query_key]
+    
+    # Save config
+    with open(config_path, 'w', encoding='utf-8') as f:
+        tomlkit.dump(config, f)
+    
+    return {"success": True, "message": "Query deleted successfully"}
+
+
+@app.patch("/api/queries/{query_key}/use")
+async def update_query_usage(query_key: str):
+    """Update last_used timestamp for a query"""
+    config_path = get_config_path()
+    
+    if not config_path.exists():
+        raise HTTPException(status_code=404, detail="Config file not found")
+    
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = tomlkit.load(f)
+    
+    queries = config.get('queries', {})
+    if query_key not in queries:
+        raise HTTPException(status_code=404, detail="Query not found")
+    
+    # Update last_used
+    now = datetime.now().isoformat()
+    config['queries'][query_key]['last_used'] = now
+    
+    # Save config
+    with open(config_path, 'w', encoding='utf-8') as f:
+        tomlkit.dump(config, f)
+    
+    return {"success": True, "last_used": now}

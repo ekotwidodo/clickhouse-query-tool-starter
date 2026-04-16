@@ -122,6 +122,98 @@
             font-size: 0.9rem;
             padding: 8px 16px;
         }
+        
+        /* Tab Navigation */
+        .nav-tabs {
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 0;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6b7280;
+            font-weight: 600;
+            padding: 15px 30px;
+            transition: all 0.3s;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: #ff8c00;
+            border: none;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: #ff8c00;
+            border: none;
+            border-bottom: 3px solid #ff8c00;
+            background: transparent;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Query Cards */
+        .query-card {
+            transition: all 0.3s;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+        }
+        
+        .query-card:hover {
+            border-color: #ff8c00;
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .query-card .card-title {
+            color: #ff8c00;
+            font-weight: 600;
+        }
+        
+        .query-card pre {
+            background: #f8f9fa;
+            font-size: 0.85rem;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 20px;
+        }
+        
+        /* Query Execution Time */
+        .execution-time {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            color: #ff8c00;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-left: auto;
+        }
+        
+        .execution-time.active {
+            display: inline-flex;
+        }
+        
+        .execution-time i {
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
@@ -133,17 +225,40 @@
             </div>
             
             <div class="p-4">
+                <!-- Tab Navigation -->
+                <ul class="nav nav-tabs" id="mainTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="switchTab('editor'); return false;">
+                            <i class="bi bi-code-slash"></i> SQL Editor
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="switchTab('saved'); return false;">
+                            <i class="bi bi-bookmark"></i> Saved Queries
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Editor Tab -->
+                <div id="editor-tab" class="tab-content active">
                 <div class="mb-4">
                     <label class="form-label fw-bold">SQL Query</label>
                     <textarea id="sql-editor"></textarea>
                     
-                    <div class="d-flex gap-2 mt-3 flex-wrap">
+                    <div class="d-flex gap-2 mt-3 flex-wrap align-items-center">
                         <button class="btn btn-primary" id="run-btn" onclick="executeQuery()">
                             <i class="bi bi-play-fill"></i> Run Query
                         </button>
                         <button class="btn btn-outline-secondary" id="clear-btn" onclick="clearEditor()">
                             <i class="bi bi-x-lg"></i> Clear
                         </button>
+                        <button class="btn btn-outline-success" id="save-query-btn" onclick="showSaveQueryModal()">
+                            <i class="bi bi-bookmark-plus"></i> Save Query
+                        </button>
+                        <div id="execution-time" class="execution-time">
+                            <i class="bi bi-clock"></i>
+                            <span id="execution-time-text">0.00s</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -169,6 +284,22 @@
                         </table>
                     </div>
                 </div>
+                </div>
+                
+                <!-- Saved Queries Tab -->
+                <div id="saved-tab" class="tab-content">
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 class="h4 mb-0">📑 Saved Queries</h2>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="loadSavedQueries()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                        </div>
+                        <div id="saved-queries-list" class="row">
+                            <!-- Queries will be loaded here -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -178,6 +309,35 @@
         <div class="text-center text-white">
             <div class="spinner mb-3"></div>
             <h5>Executing query...</h5>
+            <p class="mt-2 mb-0" style="font-size: 1.2rem; font-weight: 600;">
+                <i class="bi bi-clock"></i> <span id="loading-timer">0.00s</span>
+            </p>
+        </div>
+    </div>
+    
+    <!-- Save Query Modal -->
+    <div class="modal fade" id="saveQueryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-bookmark-plus"></i> Save Query</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="query-name-input" class="form-label">Query Name</label>
+                        <input type="text" class="form-control" id="query-name-input" placeholder="e.g., Get All Students">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Preview</label>
+                        <pre class="bg-light p-2 rounded" style="max-height: 150px; overflow-y: auto; font-size: 0.85rem;"><code id="query-preview"></code></pre>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveQuery()">Save Query</button>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -189,6 +349,8 @@
     
     <script>
         let currentResults = null;
+        let queryTimer = null;
+        let queryStartTime = null;
         
         const editor = CodeMirror.fromTextArea(document.getElementById('sql-editor'), {
             mode: 'text/x-sql',
@@ -214,6 +376,10 @@
             hideAlert();
             document.getElementById('results-section').classList.remove('active');
             
+            // Start timer
+            queryStartTime = Date.now();
+            startTimer();
+            
             try {
                 const response = await fetch('/api/query', {
                     method: 'POST',
@@ -227,13 +393,103 @@
                     throw new Error(result.detail || 'Query execution failed');
                 }
                 
+                // Stop timer and get elapsed time
+                const elapsedTime = stopTimer();
+                
                 displayResults(result);
-                showAlert(`✓ Query executed successfully! ${result.row_count} rows returned`, 'success');
+                showAlert(`✓ Query executed successfully! ${result.row_count} rows returned in ${elapsedTime}`, 'success');
                 
             } catch (error) {
+                stopTimer();
                 showAlert(`✗ Error: ${error.message}`, 'danger');
             } finally {
                 showLoading(false);
+            }
+        }
+        
+        function startTimer() {
+            const loadingTimer = document.getElementById('loading-timer');
+            const executionTimeText = document.getElementById('execution-time-text');
+            
+            // Update timer every 10ms
+            queryTimer = setInterval(() => {
+                const elapsed = (Date.now() - queryStartTime) / 1000;
+                const timeText = formatTime(elapsed);
+                loadingTimer.textContent = timeText;
+                executionTimeText.textContent = timeText;
+            }, 10);
+        }
+        
+        function stopTimer() {
+            if (queryTimer) {
+                clearInterval(queryTimer);
+                queryTimer = null;
+            }
+            
+            const elapsed = (Date.now() - queryStartTime) / 1000;
+            const timeText = formatTime(elapsed);
+            
+            // Show execution time badge
+            const executionTimeBadge = document.getElementById('execution-time');
+            const executionTimeText = document.getElementById('execution-time-text');
+            executionTimeText.textContent = timeText;
+            executionTimeBadge.classList.add('active');
+            
+            return timeText;
+        }
+        
+        function formatTime(seconds) {
+            if (seconds < 1) {
+                return `${(seconds * 1000).toFixed(0)}ms`;
+            } else if (seconds < 60) {
+                return `${seconds.toFixed(2)}s`;
+            } else {
+                const mins = Math.floor(seconds / 60);
+                const secs = (seconds % 60).toFixed(2);
+                return `${mins}m ${secs}s`;
+            }
+        }
+        
+        function startTimer() {
+            const loadingTimer = document.getElementById('loading-timer');
+            const executionTimeText = document.getElementById('execution-time-text');
+            
+            // Update timer every 10ms
+            queryTimer = setInterval(() => {
+                const elapsed = (Date.now() - queryStartTime) / 1000;
+                const timeText = formatTime(elapsed);
+                loadingTimer.textContent = timeText;
+                executionTimeText.textContent = timeText;
+            }, 10);
+        }
+        
+        function stopTimer() {
+            if (queryTimer) {
+                clearInterval(queryTimer);
+                queryTimer = null;
+            }
+            
+            const elapsed = (Date.now() - queryStartTime) / 1000;
+            const timeText = formatTime(elapsed);
+            
+            // Show execution time badge
+            const executionTimeBadge = document.getElementById('execution-time');
+            const executionTimeText = document.getElementById('execution-time-text');
+            executionTimeText.textContent = timeText;
+            executionTimeBadge.classList.add('active');
+            
+            return timeText;
+        }
+        
+        function formatTime(seconds) {
+            if (seconds < 1) {
+                return `${(seconds * 1000).toFixed(0)}ms`;
+            } else if (seconds < 60) {
+                return `${seconds.toFixed(2)}s`;
+            } else {
+                const mins = Math.floor(seconds / 60);
+                const secs = (seconds % 60).toFixed(2);
+                return `${mins}m ${secs}s`;
             }
         }
         
@@ -263,6 +519,7 @@
             document.getElementById('results-section').classList.remove('active');
             document.getElementById('download-csv-btn').style.display = 'none';
             document.getElementById('download-excel-btn').style.display = 'none';
+            document.getElementById('execution-time').classList.remove('active');
             currentResults = null;
         }
         
@@ -373,6 +630,235 @@
         function escapeXml(text) {
             return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
         }
+        
+        // Saved Queries Functions
+        let saveQueryModal = null;
+        
+        function switchTab(tabName) {
+            // Update tab links
+            document.querySelectorAll('#mainTabs .nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.closest('.nav-link').classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Load saved queries when switching to saved tab
+            if (tabName === 'saved') {
+                loadSavedQueries();
+            }
+        }
+        
+        function showSaveQueryModal() {
+            const sql = editor.getValue().trim();
+            if (!sql) {
+                showAlert('Please enter a SQL query to save', 'danger');
+                return;
+            }
+            
+            // Set preview
+            document.getElementById('query-preview').textContent = sql;
+            document.getElementById('query-name-input').value = '';
+            
+            // Show modal
+            saveQueryModal = new bootstrap.Modal(document.getElementById('saveQueryModal'));
+            saveQueryModal.show();
+            
+            // Focus on input
+            setTimeout(() => {
+                document.getElementById('query-name-input').focus();
+            }, 500);
+        }
+        
+        async function saveQuery() {
+            const name = document.getElementById('query-name-input').value.trim();
+            const sql = editor.getValue().trim();
+            
+            if (!name) {
+                alert('Please enter a query name');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/queries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, sql })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.detail || 'Failed to save query');
+                }
+                
+                showAlert(`✓ Query saved successfully as "${result.name}"`, 'success');
+                
+                // Close modal
+                saveQueryModal.hide();
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+        
+        async function loadSavedQueries() {
+            const container = document.getElementById('saved-queries-list');
+            container.innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-primary"></div><p class="mt-2">Loading saved queries...</p></div>';
+            
+            try {
+                const response = await fetch('/api/queries');
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load queries');
+                }
+                
+                displaySavedQueries(result.queries);
+                
+            } catch (error) {
+                container.innerHTML = `<div class="col-12"><div class="alert alert-danger">Error loading queries: ${error.message}</div></div>`;
+            }
+        }
+        
+        function displaySavedQueries(queries) {
+            const container = document.getElementById('saved-queries-list');
+            
+            if (!queries || queries.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <i class="bi bi-bookmark"></i>
+                            <h4>No Saved Queries</h4>
+                            <p>Write a query in the SQL Editor and click "Save Query" to save it here.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = queries.map(query => {
+                const lastUsed = query.last_used ? formatDate(query.last_used) : 'Never';
+                const createdAt = query.created_at ? formatDate(query.created_at) : 'Unknown';
+                
+                return `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card query-card">
+                            <div class="card-body">
+                                <h5 class="card-title">${escapeHtml(query.name)}</h5>
+                                <p class="card-text text-muted small mb-2">
+                                    <i class="bi bi-clock"></i> Last used: ${lastUsed}<br>
+                                    <i class="bi bi-calendar"></i> Created: ${createdAt}
+                                </p>
+                                <pre class="p-2 rounded mb-3"><code>${escapeHtml(query.sql)}</code></pre>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-primary flex-fill" onclick="loadQuery('${query.key}')">
+                                        <i class="bi bi-download"></i> Load
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteQuery('${query.key}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function loadQuery(key) {
+            try {
+                // Update last_used
+                await fetch(`/api/queries/${key}/use`, { method: 'PATCH' });
+                
+                // Load query into editor
+                const response = await fetch('/api/queries');
+                const result = await response.json();
+                const query = result.queries.find(q => q.key === key);
+                
+                if (query) {
+                    editor.setValue(query.sql);
+                    
+                    // Switch to editor tab
+                    document.querySelectorAll('#mainTabs .nav-link').forEach(link => {
+                        link.classList.remove('active');
+                    });
+                    document.querySelectorAll('#mainTabs .nav-link')[0].classList.add('active');
+                    
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById('editor-tab').classList.add('active');
+                    
+                    // Focus on editor
+                    editor.focus();
+                    
+                    showAlert(`✓ Query "${query.name}" loaded into editor`, 'success');
+                }
+                
+            } catch (error) {
+                showAlert(`Error loading query: ${error.message}`, 'danger');
+            }
+        }
+        
+        async function deleteQuery(key) {
+            if (!confirm('Are you sure you want to delete this query?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/queries/${key}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.detail || 'Failed to delete query');
+                }
+                
+                showAlert('✓ Query deleted successfully', 'success');
+                
+                // Reload saved queries
+                loadSavedQueries();
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+        
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+        
+        // Allow Enter key in modal input
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('query-name-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    saveQuery();
+                }
+            });
+        });
     </script>
 </body>
 </html>
