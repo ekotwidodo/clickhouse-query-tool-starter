@@ -1,0 +1,414 @@
+body {
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding: 20px 0;
+}
+
+.main-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.header {
+    background: linear-gradient(135deg, #ff8c00 0%, #ff6b35 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.CodeMirror {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    height: 300px;
+    font-size: 14px;
+}
+
+.CodeMirror:focus-within {
+    border-color: #ff8c00;
+}
+
+/* CodeMirror Selection Highlight */
+.CodeMirror-selected {
+    background: rgba(255, 140, 0, 0.3) !important;
+}
+
+.CodeMirror-focused .CodeMirror-selected {
+    background: rgba(255, 140, 0, 0.4) !important;
+}
+
+.CodeMirror ::selection {
+    background: rgba(255, 140, 0, 0.4) !important;
+}
+
+.CodeMirror ::-moz-selection {
+    background: rgba(255, 140, 0, 0.4) !important;
+}
+
+.CodeMirror-line::selection,
+.CodeMirror-line > span::selection,
+.CodeMirror-line > span > span::selection {
+    background: rgba(255, 140, 0, 0.4) !important;
+}
+
+.CodeMirror-line::-moz-selection,
+.CodeMirror-line > span::-moz-selection,
+.CodeMirror-line > span > span::-moz-selection {
+    background: rgba(255, 140, 0, 0.4) !important;
+}
+
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #ff8c00;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.results-section {
+    display: none;
+    margin-top: 30px;
+}
+
+.results-section.active {
+    display: block;
+}
+
+.table-container {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 60vh;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table thead th {
+    background: #6b7280;
+    color: white;
+    white-space: nowrap;
+}
+
+.table tbody td {
+    white-space: nowrap;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.table tbody tr:hover {
+    background-color: #fff3e0;
+}
+
+/* Tab Navigation */
+.nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 0;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #6b7280;
+    font-weight: 600;
+    padding: 15px 30px;
+    transition: all 0.3s;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #ff8c00;
+    border: none;
+}
+
+.nav-tabs .nav-link.active {
+    color: #ff8c00;
+    border: none;
+    border-bottom: 3px solid #ff8c00;
+    background: transparent;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Query Cards */
+.query-card {
+    transition: all 0.3s;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.query-card:hover {
+    border-color: #ff8c00;
+    box-shadow: 0 4px 12px rgba(255, 140, 0, 0.15);
+    transform: translateX(5px);
+}
+
+.query-card .card-title {
+    color: #ff8c00;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.query-card .query-actions .btn {
+    padding: 5px 10px;
+    font-size: 0.875rem;
+}
+
+.query-card .query-actions .btn:hover {
+    transform: scale(1.1);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 20px;
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-top: 30px;
+}
+
+.footer a {
+    color: #ff8c00;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+.footer .heart {
+    color: #ff6b35;
+    display: inline-block;
+    animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Query Execution Time */
+.execution-time {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    color: #ff8c00;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-left: auto;
+}
+
+.execution-time.active {
+    display: inline-flex;
+}
+
+.execution-time i {
+    font-size: 1.1rem;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    position: fixed;
+    left: -400px;
+    top: 0;
+    width: 400px;
+    height: 100vh;
+    background: #ffffff;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 1040;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+}
+
+.sidebar.active {
+    left: 0;
+}
+
+.sidebar-header {
+    background: linear-gradient(135deg, #667eea 0%, #667eea 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.sidebar-header h5 {
+    color: white;
+    font-weight: 600;
+}
+
+.sidebar-content {
+    padding: 15px;
+    background: #f8f9fa;
+}
+
+.btn-close-white {
+    color: white;
+    background: transparent;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.btn-close-white:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Tree View Styles */
+.tree-item {
+    margin: 5px 0;
+}
+
+.tree-table {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tree-table:hover {
+    background: #fff3e0;
+    border-color: #ff8c00;
+}
+
+.tree-table i {
+    font-size: 1.1rem;
+    color: #6b7280;
+}
+
+.tree-table .table-name {
+    flex: 1;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.tree-table .toggle-icon {
+    transition: transform 0.3s;
+}
+
+.tree-table .toggle-icon.expanded {
+    transform: rotate(90deg);
+}
+
+.tree-columns {
+    margin-left: 20px;
+    margin-top: 5px;
+    display: none;
+}
+
+.tree-columns.expanded {
+    display: block;
+}
+
+.tree-column {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin: 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tree-column:hover {
+    background: #fff3e0;
+    border-color: #ff8c00;
+}
+
+.tree-column .column-icon {
+    font-size: 0.9rem;
+    width: 20px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.tree-column .column-name {
+    flex: 1;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.tree-column .column-type {
+    color: #95a5a6;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* Adjust main content when sidebar is active */
+.main-card {
+    transition: margin-left 0.3s ease, max-width 0.3s ease;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.main-card.shifted {
+    margin-left: 400px !important;
+    margin-right: 0 !important;
+}

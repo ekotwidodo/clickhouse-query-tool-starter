@@ -2,16 +2,19 @@
 
 Modern web-based SQL query tool for ClickHouse with responsive UI and data export capabilities.
 
+![ClickHouse SQL Query Tool](screenshoot.png)
+
 ## ✨ Features
 
 - **Web UI**: Modern Bootstrap 5 design with orange theme
-- **SQL Editor**: CodeMirror-powered with syntax highlighting
-- **Saved Queries**: Save, load, and manage your favorite queries
+- **SQL Editor**: CodeMirror-powered editor with syntax highlighting, auto-completion, and line numbers
+- **Saved Queries**: Save, load, and manage your favorite queries with metadata tracking
 - **Execution Timer**: Real-time query execution time tracking
-- **Data Export**: Download results as CSV, Excel, or Parquet
-- **Responsive**: Works on desktop, tablet, and mobile
-- **TOML Config**: Dynamic database configuration
-- **Real-time**: Instant query execution with loading indicators
+- **Data Export**: Download results as CSV, Excel, or Parquet formats
+- **Responsive Design**: Fully responsive layout that works on desktop, tablet, and mobile devices
+- **TOML Configuration**: Dynamic database configuration via TOML files
+- **Real-time Feedback**: Instant query execution with loading indicators and progress tracking
+- **Query Management**: Organize queries with names, creation dates, and last-used timestamps
 
 ## 🚀 Quick Start
 
@@ -53,19 +56,23 @@ Access at: **http://localhost:8000**
 ### Web Features
 
 #### SQL Editor Tab
-- **SQL Editor**: Syntax highlighting, line numbers, auto-close brackets
+- **SQL Editor**: Syntax highlighting, line numbers, auto-close brackets, and code completion
 - **Keyboard Shortcuts**: `Ctrl+Enter` or `Cmd+Enter` to run query
 - **Execution Timer**: Real-time timer showing query duration
 - **Loading Indicator**: Shows during query execution with live timer
-- **Results Table**: Scrollable, sticky header, hover effects
-- **Export Options**: Download as CSV, Excel, or Parquet
-- **Save Queries**: Bookmark queries for later use
+- **Results Table**: Scrollable table with sticky header and hover effects
+- **Export Options**: Download results as CSV, Excel, or Parquet
+- **Save Queries**: Bookmark queries for later use with custom names
 
 #### Saved Queries Tab
-- **Query Library**: View all saved queries in card layout
-- **Load Queries**: Load saved queries into editor for editing
-- **Delete Queries**: Remove queries you no longer need
-- **Metadata Tracking**: Created time and last used timestamps
+- **List Card Layout**: View all saved queries in a clean vertical list with pagination (10 queries per page)
+- **Query Actions**: Four action buttons for each query:
+  - 👁️ **View**: Open modal to view query details including name, SQL, and metadata
+  - ▶️ **Load**: Load query into SQL Editor and execute immediately
+  - ✏️ **Edit**: Load query into SQL Editor for modification with update capability
+  - 🗑️ **Delete**: Remove query with confirmation dialog
+- **Pagination**: Navigate through saved queries with page numbers and previous/next buttons
+- **Metadata Tracking**: Display created time and last used timestamps for each query
 - **Quick Refresh**: Reload query list with one click
 
 ## 📁 Project Structure
@@ -77,6 +84,9 @@ clickhouse-starter/
 ├── app.py                   # Web server (FastAPI)
 ├── templates/
 │   └── index.html           # Web interface (Bootstrap 5)
+├── static/
+│   ├── app.js               # Frontend JavaScript logic
+│   └── style.css            # Custom CSS styling
 ├── modules/
 │   ├── __init__.py
 │   ├── config.py            # TOML config reader
@@ -84,6 +94,8 @@ clickhouse-starter/
 │   ├── query.py             # Query executor
 │   └── formatter.py         # Data formatter (passthrough)
 ├── pyproject.toml           # Project dependencies
+├── requirements.txt         # Pip requirements
+├── screenshoot.png          # Application screenshot
 └── .gitignore              # Git ignore rules
 ```
 
@@ -166,13 +178,20 @@ pip install -r requirements.txt
 
 ### Loading Saved Queries
 1. Switch to **Saved Queries** tab
-2. Browse your saved queries
-3. Click **Load** to load query into editor
-4. Edit if needed, then click **Run Query**
+2. Browse your saved queries using pagination if needed
+3. Choose an action:
+   - Click **▶️ Load** to load query into editor and run it
+   - Click **✏️ Edit** to load query into editor for modification
+   - Click **👁️ View** to see full query details in a modal
+4. After loading/editing, click **Run Query** to execute
 
 ### Managing Queries
 - **Refresh**: Click refresh button to reload query list
+- **View**: Click eye icon to view query details in modal (name, SQL, created/last used)
+- **Load**: Click play icon to load and execute query in SQL Editor
+- **Edit**: Click pencil icon to edit query in SQL Editor, then click **Update Query** to save changes
 - **Delete**: Click trash icon to remove a query (with confirmation)
+- **Pagination**: Use page numbers or previous/next buttons to navigate through queries
 
 ## ✨ Code Quality
 
